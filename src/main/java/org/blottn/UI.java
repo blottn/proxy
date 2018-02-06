@@ -40,11 +40,13 @@ public class UI extends Thread {
         @Override
         public void run() {
             try {
-                out.print("HTTP/1.1 200 \r\n");
-                out.print("Content-type: text/html\r\n");
-                out.print("Connection: close\r\n");
-                out.print("\r\n");
+                output("HTTP/1.1 200 ");
+                output("Content-type: text/html");
+                output("Connection: close");
+                output("");
+                // clear input
                 for (String line = in.readLine() ; line != null && line.length() != 0; line = in.readLine()) {}
+
                 out.print("<html><head><title>hello</title></head><body><h1>TITLE!</h1><p>paragraph</p></body></html>\r\n");
                 out.close();
                 in.close();
