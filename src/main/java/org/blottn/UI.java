@@ -2,15 +2,17 @@ package org.blottn;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 public class UI extends Thread {
 
     ServerSocket socket;
     boolean dead;
-    
+    List<String> lines;
 
     public UI(int port, int max) throws IOException {
         socket = new ServerSocket(port,max);
+        lines = new ArrayList<String>();
         dead = false;
     }
 
@@ -18,7 +20,7 @@ public class UI extends Thread {
     public void run() {
         while (!dead) {
             try {
-                new UIHandler(socket.accept()).start();
+                new UIHandler(socket.accept(), lines).start();
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -26,16 +28,22 @@ public class UI extends Thread {
         }
     }
 
+    public void print(String s) {
+        lines.add(s);
+    }
+
     class UIHandler extends Thread {
         
         private Socket connection;
         private PrintWriter out;
         private BufferedReader in;
+        private List<String> lines;
 
-        UIHandler(Socket connection) throws IOException {
+        UIHandler(Socket connection, List<String> lines) throws IOException {
             this.connection = connection;
             this.out = new PrintWriter(connection.getOutputStream(), true);
             this.in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            this.lines = lines;
         }
         @Override
         public void run() {
@@ -46,8 +54,9 @@ public class UI extends Thread {
                 output("");
                 // clear input
                 for (String line = in.readLine() ; line != null && line.length() != 0; line = in.readLine()) {}
-
-                out.print("<html><head><title>hello</title></head><body><h1>TITLE!</h1><p>paragraph</p></body></html>\r\n");
+                for (String line : lines) {
+                    out.print("<p>" + line + "</p>");
+                }
                 out.close();
                 in.close();
 
