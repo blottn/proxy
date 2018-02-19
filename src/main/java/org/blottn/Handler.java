@@ -27,39 +27,50 @@ public class Handler extends Thread {
     }
 
     public void run() {
+        
         while (true) {      //keep going till connection goes down (caught below)
             if (lines.size() > 0) { //if we have a new request do the thing
-                //check if https or http...
-                if (lines.get(0).split(" ")[0].equals("CONNECT")) {
-                    https();
+                if (lines.size() >= 2 && Proxy.blocked.contains(lines.get(0).split(" ")[1])) {
+                    try {
+                        out.write(new String("HTTP/1.1 403 FORBIDDEN\r\ncontent-type: text/plain\r\n\r\nblocked").getBytes());
+                        System.out.println("Blocked");
+                        connection.close();
+                        break;
+                    } catch (Exception e) {}
                 }
                 else {
-                    try {
-                        parseHost(lines);
-                        Socket socket = new Socket(host,port);
-                        PrintWriter serverWriteStream = new PrintWriter(socket.getOutputStream(), true);
-                        BufferedInputStream serverReader = new BufferedInputStream(socket.getInputStream());
-
-                        log(lines); //log request
-                        System.out.println("sending request");
-                        for (String line : lines) {
-                            serverWriteStream.println(line);
-                        }
-                        serverWriteStream.println("");
-                        serverWriteStream.flush();
-                    
-                        byte[] input = new byte[BUFFER_SIZE];
-                        int number = serverReader.read(input);
-                        if (number > 0) {
-                            out.write(input,0,number);
-                        }
-                        out.flush();
-                        
-                        lines.clear();
+                    //check if https or http...
+                    if (lines.get(0).split(" ")[0].equals("CONNECT")) {
+                        https();
                     }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                        System.err.println(host + " " + port);
+                    else {
+                        try {
+                            parseHost(lines);
+                            Socket socket = new Socket(host,port);
+                            PrintWriter serverWriteStream = new PrintWriter(socket.getOutputStream(), true);
+                            BufferedInputStream serverReader = new BufferedInputStream(socket.getInputStream());
+
+                            log(lines); //log request
+                            System.out.println("sending request");
+                            for (String line : lines) {
+                                serverWriteStream.println(line);
+                            }
+                            serverWriteStream.println("");
+                            serverWriteStream.flush();
+                    
+                            byte[] input = new byte[BUFFER_SIZE];
+                            int number = serverReader.read(input);
+                            if (number > 0) {
+                                out.write(input,0,number);
+                            }
+                            out.flush();
+                        
+                            lines.clear();
+                        }
+                        catch (Exception e) {
+                            e.printStackTrace();
+                            System.err.println(host + " " + port);
+                        }
                     }
                 }
             }
@@ -107,6 +118,7 @@ public class Handler extends Thread {
             serverConnection.start();
 
             while(true) {
+                System.out.println("this one");
                 log(lines);
                 //pass from client to server
                 byte[] buff = new byte[BUFFER_SIZE];

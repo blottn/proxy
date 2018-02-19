@@ -43,6 +43,7 @@ public class Proxy extends Thread {
 	public static void main(String[] args) {
         Proxy proxy = new Proxy(Integer.parseInt(args[0]));
         blocked = new ArrayList<String>();
+//        blocked.add("http://example.org/");
         proxy.start();
 	}
 }
