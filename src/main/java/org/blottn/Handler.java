@@ -13,17 +13,17 @@ public class Handler extends Thread {
     private BufferedReader in;
     final private InputStream in_b;
     private ArrayList<String> lines;
-    private UI ui;
+    private Manage manage;
     private String host;
     private int port;
 
-    public Handler(Socket connection, UI ui) throws IOException {
+    public Handler(Socket connection, Manage manage) throws IOException {
         this.connection = connection;
         this.out = connection.getOutputStream();
         this.in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
         this.in_b = connection.getInputStream();
         lines = new ArrayList<String>();
-        this.ui = ui;
+        this.manage = manage;
     }
 
     public void run() {
