@@ -8,11 +8,9 @@ public class Manage extends Thread {
 
     ServerSocket socket;
     boolean dead;
-    List<String> lines;
 
     public Manage(int port, int max) throws IOException {
         socket = new ServerSocket(port,max);
-        lines = new ArrayList<String>();
         dead = false;
     }
 
@@ -20,7 +18,7 @@ public class Manage extends Thread {
     public void run() {
         while (!dead) {
             try {
-                new ManageHandler(socket.accept(), lines).start();
+                new ManageHandler(socket.accept()).start();
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -28,42 +26,38 @@ public class Manage extends Thread {
         }
     }
 
-    public void print(String s) {
-        lines.add(s);
-    }
-
     class ManageHandler extends Thread {
         
         private Socket connection;
         private PrintWriter out;
         private BufferedReader in;
-        private List<String> lines;
 
-        ManageHandler(Socket connection, List<String> lines) throws IOException {
+        ManageHandler(Socket connection) throws IOException {
             this.connection = connection;
             this.out = new PrintWriter(connection.getOutputStream(), true);
             this.in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            this.lines = lines;
         }
         @Override
         public void run() {
             try {
-                output("HTTP/1.1 200 ");
-                output("Content-type: text/html");
-                output("Connection: close");
-                output("");
-                // clear input
-                for (String line = in.readLine() ; line != null && line.length() != 0; line = in.readLine()) {}
-                for (String line : lines) {
-                    out.print("<p>" + line + "</p>");
+                ArrayList<String> requestLines = new ArrayList<String>();
+                for (String line = in.readLine() ; line != null && line.length() != 0 ;line = in.readLine()) {
+                    requestLines.add(line);
+                    System.out.println(line);
                 }
-                out.close();
-                in.close();
-
+                String type = requestLines.get(0).split(" ")[0];
+                if (type.equals("GET")){
+                    String endpoint = requestLines.get(0).split(" ")[1];
+                    if (endpoint.split("\\?")[0].equals("/block") && endpoint.split("\\?").length == 2) {
+                        String name = endpoint.split("\\?")[1];
+                        Proxy.log("Blocked: " + name);
+                        Proxy.blocked.add(name);
+                    }
+                }
+                out.println("HTTP/1.1 200 OK\r\n\r\n");
                 connection.close();
             }
             catch (IOException e) {}
-            System.out.println("closed");
         }
 
         private void output(String line) throws IOException{
